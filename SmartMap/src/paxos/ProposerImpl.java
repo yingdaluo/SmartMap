@@ -31,8 +31,8 @@ public class ProposerImpl implements Proposer {
 
 	@Override
 	public void receivePrepareOK(Proposal proposal, Proposal prevAcceptedProposal, String acceptorID, Object value) {
-		if(proposal.isGreaterThan(myProposal))
-			myProposal.setProposalID(proposal.getProposalID());
+//		if(proposal.isGreaterThan(myProposal))
+//			myProposal.setProposalID(proposal.getProposalID());
 		
 		if(!proposal.equals(myProposal)|| promiseSet.contains(acceptorID))
 			return;
@@ -60,8 +60,8 @@ public class ProposerImpl implements Proposer {
 	}
 
 	public void receiveAcceptOK(Proposal proposal, String acceptorID){
-		if(proposal.isGreaterThan(myProposal))
-			myProposal.setProposalID(proposal.getProposalID());
+//		if(proposal.isGreaterThan(myProposal))
+//			myProposal.setProposalID(proposal.getProposalID());
 		
 		if(!proposal.equals(myProposal)|| acceptedSet.contains(acceptorID))
 			return;
