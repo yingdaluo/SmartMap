@@ -7,11 +7,11 @@ public class ProposerImpl implements Proposer {
 	private Object proposedValue = null;
 	private Proposal myProposal;
 	private Proposal lastAcceptedProposal = null;
-	private Router router;
+	private Messenger router;
 	private HashSet<String> promiseSet   = new HashSet<String>();
 	private HashSet<String> acceptedSet   = new HashSet<String>();
 
-	public ProposerImpl(String proposer, Router router, int quorum){
+	public ProposerImpl(String proposer, Messenger router, int quorum){
 		myProposal = new Proposal(0, proposer);
 		this.router = router;
 		this.quorum = quorum;
