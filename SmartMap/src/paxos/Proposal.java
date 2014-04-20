@@ -1,12 +1,19 @@
 package paxos;
 
-public class Proposal {
+import java.io.Serializable;
+
+public class Proposal implements Serializable{
+
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -9515933220181197L;
 	private int proposalID;
-	private  final String proposer;
+	private  final String proposerID;
 
 	public Proposal(int proposalID, String proposer){
 		this.proposalID = proposalID;
-		this.proposer = proposer;
+		this.proposerID = proposer;
 	}
 
 	public int getProposalID() {
@@ -18,7 +25,7 @@ public class Proposal {
 	}
 
 	public String getProposer() {
-		return proposer;
+		return proposerID;
 	}
 
 	public void incrementProposalID(){
@@ -28,7 +35,7 @@ public class Proposal {
 	public boolean isGreaterThan(Proposal proposal){
 		if(this.proposalID >proposal.proposalID)
 			return true;
-		else if(this.proposer.compareTo(proposal.proposer)>0)
+		else if(this.proposerID.compareTo(proposal.proposerID)>0)
 			return true;
 		return false;
 	}

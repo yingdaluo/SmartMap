@@ -1,12 +1,12 @@
 package paxos;
 
-public class AcceptorImpl implements Acceptor{
+public class AcceptorImpl extends Thread implements Acceptor {
 	private Proposal promisedProposal = null;
 	private Proposal acceptedProposal = null;
 	private Object acceptedValue = null;
-	private Router router;
+	private Messenger router;
 	
-	public AcceptorImpl(Router router) {
+	public AcceptorImpl(Messenger router) {
 		this.router = router;
 	}
 	@Override
@@ -33,6 +33,15 @@ public class AcceptorImpl implements Acceptor{
 		}else{
 			router.sendReject(proposerID, incomingProposal, promisedProposal);
 		}
+	}
+	
+	@Override
+	public void run() {
+		
+	}
+	@Override
+	public void receiveCommit(Object value) {
+		// TODO Auto-generated method stub
 	}
 
 }

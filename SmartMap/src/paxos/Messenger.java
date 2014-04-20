@@ -1,6 +1,6 @@
 package paxos;
 
-public interface Router {
+public interface Messenger {
 	//Proposers
 	public void sendProposal(Proposal proposal);
 	public void sendAcceptRequest(Proposal proposal, Object proposalValue);
@@ -11,5 +11,4 @@ public interface Router {
 	public void sendAcceptOK(String toProposer, Proposal fromProposal);
 	public void sendReject(String toProposer, Proposal fromProposal, Proposal receivedMaxProposal);
 
-	public void receive();
 }
