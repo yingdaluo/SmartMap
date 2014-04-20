@@ -1,9 +1,15 @@
 package paxos;
 
+import java.rmi.RemoteException;
+import java.rmi.server.UnicastRemoteObject;
 import java.util.HashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
 
-public class PaxosNodeImpl {
+public class PaxosNodeImpl extends UnicastRemoteObject implements PaxosNode {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -8138096021948421274L;
 	private Acceptor acceptor;
 	private Proposer proposer;
 	private Messenger router;
@@ -12,11 +18,11 @@ public class PaxosNodeImpl {
 	private ConcurrentLinkedDeque<Message> acceptorQueue = new ConcurrentLinkedDeque<Message>();
 
 
-	public PaxosNodeImpl() {
+	public PaxosNodeImpl()throws RemoteException {
 		// Do nothing
 	}
 
-	public PaxosNodeImpl(HashMap<String, PaxosNode> nodeMap,String nodeID, int quorum) {
+	public PaxosNodeImpl(HashMap<String, PaxosNode> nodeMap,String nodeID, int quorum) throws RemoteException{
 		router = new MessengerImpl(nodeMap, nodeID);
 		acceptor = new AcceptorImpl(router);
 		proposer = new ProposerImpl(nodeID, router, quorum);

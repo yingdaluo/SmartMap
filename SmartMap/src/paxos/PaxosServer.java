@@ -9,21 +9,30 @@ import java.rmi.registry.LocateRegistry;
 import java.util.HashMap;
 public class PaxosServer {
 
-	private static HashMap<String, PaxosNode> nodeMap;
+	private static HashMap<String, PaxosNode> nodeMap = new HashMap<String, PaxosNode>();
 
 	private String address;
 	private String nodeID;
 	private int quorum;
-
-
-	public void start(String IPAddress){
+	private int port;
+	
+	private HashMap<String, String> remoteAddressSet =  new HashMap<String, String>();
+	
+	public PaxosServer(HashMap<String, String> remoteAddressSet, String nodeID, String IPAddress){
+		this.remoteAddressSet = remoteAddressSet;
+		this.nodeID = nodeID;
+		this.address = "//"+IPAddress+"/RMI";
+		this.port = Integer.parseInt(IPAddress.split(":")[1]);
+	}
+	
+	public void start(){
 
 		try {
-			address = "//"+IPAddress+"/RMI";
+			System.out.println(address);
 			System.setProperty("java.security.policy", "policy.txt");
 			System.setSecurityManager(new java.rmi.RMISecurityManager());
 			PaxosNode myNode = (PaxosNode) new PaxosNodeImpl();
-			LocateRegistry.createRegistry(9999);
+			LocateRegistry.createRegistry(port);
 			Naming.bind(address, myNode);
 			System.out.println("RMI Server port Bind Success");
 		} catch (RemoteException e) {
@@ -36,22 +45,23 @@ public class PaxosServer {
 			System.out.println("URL Error");
 			e.printStackTrace();
 		}
+		System.out.println("Startup success: "+ nodeID);
 	}
 
 
 	public void register(){
-		HashMap<String, String> remoteAddressSet =  new HashMap<String, String>();
-		//TODO: create remote server ip & port ArrayList;
-
 		for(String nodeID: remoteAddressSet.keySet()){
 			while(true)
-				try{ 
-					PaxosNode remoteNode =  (PaxosNode)Naming.lookup(remoteAddressSet.get(nodeID));
+				try{
+					String remoteIPAddress = "//"+remoteAddressSet.get(nodeID)+"/RMI";
+					System.out.println(remoteIPAddress);
+					PaxosNode remoteNode =  (PaxosNode)Naming.lookup(remoteIPAddress);
 					nodeMap.put(nodeID, remoteNode);
-
+					System.out.println("RMI Client Bind Success:" + nodeID);
 					break;
 				} catch (NotBoundException e){
 					try {
+						e.printStackTrace();
 						Thread.sleep(1000);
 					} catch (InterruptedException e1) {
 						// TODO Auto-generated catch block
@@ -64,8 +74,9 @@ public class PaxosServer {
 				}		
 		}
 
-		PaxosNode myNode = (PaxosNode) new PaxosNodeImpl(nodeMap, nodeID, quorum);
+		
 		try {
+			PaxosNode myNode = (PaxosNode) new PaxosNodeImpl(nodeMap, nodeID, quorum);
 			Naming.rebind(address, myNode);
 		} catch (RemoteException e) {
 			// TODO Auto-generated catch block
@@ -74,5 +85,6 @@ public class PaxosServer {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		System.out.println("Register success: "+ nodeID);
 	}
 }

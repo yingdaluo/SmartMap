@@ -1,6 +1,6 @@
 package paxos;
 
-import java.awt.TrayIcon.MessageType;
+import java.rmi.RemoteException;
 import java.util.HashMap;
 
 public class MessengerImpl implements Messenger{
@@ -34,14 +34,24 @@ public class MessengerImpl implements Messenger{
 			Proposal acceptedProposal, Object acceptedValue) {
 		Message message =  new Message(nodeID, Message.Type.PrepareOK, acceptedValue, fromProposal, acceptedProposal);
 		PaxosNode remoteNode = nodeMap.get(toProposer);
-		remoteNode.putproposerQueue(message);
+		try {
+			remoteNode.putproposerQueue(message);
+		} catch (RemoteException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 	@Override
 	public void sendAcceptOK(String toProposer, Proposal fromProposal) {
 		Message message =  new Message(nodeID, Message.Type.AcceptOK, null, fromProposal, null);
 		PaxosNode remoteNode = nodeMap.get(toProposer);
-		remoteNode.putproposerQueue(message);
+		try {
+			remoteNode.putproposerQueue(message);
+		} catch (RemoteException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 	@Override
@@ -49,13 +59,23 @@ public class MessengerImpl implements Messenger{
 			Proposal receivedMaxProposal) {
 		Message message =  new Message(nodeID, Message.Type.Reject, null, fromProposal, receivedMaxProposal);
 		PaxosNode remoteNode = nodeMap.get(toProposer);
-		remoteNode.putproposerQueue(message);
+		try {
+			remoteNode.putproposerQueue(message);
+		} catch (RemoteException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 	private void sendMessageToAllAcceptors(Message message){
 		for(String remoteNodeID : nodeMap.keySet()){
 			PaxosNode remoteNode = nodeMap.get(remoteNodeID);
-			remoteNode.putacceptorQueue(message);
+			try {
+				remoteNode.putacceptorQueue(message);
+			} catch (RemoteException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 	}
 }
