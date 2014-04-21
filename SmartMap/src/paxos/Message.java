@@ -19,9 +19,9 @@ public class Message implements Serializable{
 	final String senderID;
 	final Type messageType;
 	final Object value;
-	final Proposal toProposal;
-	final Proposal prevAcceptedProposal; 
-	public Message(String senderID, Type type, Object value, Proposal proposal, Proposal prevAcceptedProposal) {
+	final ProposalID toProposal;
+	final ProposalID prevAcceptedProposal; 
+	public Message(String senderID, Type type, Object value, ProposalID proposal, ProposalID prevAcceptedProposal) {
 		this.senderID = senderID;
 		this.messageType = type;
 		this.value = value;
@@ -45,11 +45,11 @@ public class Message implements Serializable{
 		return value;
 	}
 
-	public Proposal getToProposal() {
+	public ProposalID getToProposal() {
 		return toProposal;
 	}
 
-	public Proposal getPrevAcceptedProposal() {
+	public ProposalID getPrevAcceptedProposal() {
 		return prevAcceptedProposal;
 	}
 

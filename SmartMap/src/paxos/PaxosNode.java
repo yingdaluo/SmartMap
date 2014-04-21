@@ -8,5 +8,5 @@ public interface PaxosNode extends Remote{
 
 	public void putacceptorQueue(Message message) throws RemoteException;
 
-	 
+	public void putClientMessageQueue(Object value) throws RemoteException;
 }

@@ -1,8 +1,8 @@
 package paxos;
 
-public class AcceptorImpl extends Thread implements Acceptor {
-	private Proposal promisedProposal = null;
-	private Proposal acceptedProposal = null;
+public class AcceptorImpl implements Acceptor {
+	private ProposalID promisedProposal = null;
+	private ProposalID acceptedProposal = null;
 	private Object acceptedValue = null;
 	private Messenger router;
 	
@@ -10,12 +10,15 @@ public class AcceptorImpl extends Thread implements Acceptor {
 		this.router = router;
 	}
 	@Override
-	public void receivePrepare(String proposerID, Proposal incomingProposal) {
+	public void receivePrepare(String proposerID, ProposalID incomingProposal) {
 		if (promisedProposal != null && promisedProposal.equals(incomingProposal)) { 
 			router.sendPrepareOK(proposerID, incomingProposal, acceptedProposal, acceptedValue);
 		}
 		else if(promisedProposal == null || incomingProposal.isGreaterThan(promisedProposal)){
 			promisedProposal = incomingProposal;
+			System.out.print("send prepare ok.");
+			System.out.print(" AcceptedProposal:"+acceptedValue);
+			System.out.println(". AcceptedValue:"+acceptedValue);
 			router.sendPrepareOK(proposerID, incomingProposal, acceptedProposal, acceptedValue);
 		}else{
 			router.sendReject(proposerID, incomingProposal, promisedProposal);
@@ -23,25 +26,31 @@ public class AcceptorImpl extends Thread implements Acceptor {
 	}
 
 	@Override
-	public void receiveAcceptRequest(String proposerID, Proposal incomingProposal, Object value) {
+	public void receiveAcceptRequest(String proposerID, ProposalID incomingProposal, Object value) {
+		System.out.println("Received accept request");
+		System.out.println("My accepted value is:"+acceptedValue+", and its acceptedProposal is:"+acceptedProposal);
+		if(promisedProposal == null)
+			System.out.println("The promised proposal of mine is: null, and the incoming proposal is:"+incomingProposal.getProposalID()+"|"+incomingProposal.getProposer());
+		else
+			System.out.println("The promised proposal of mine is:"+promisedProposal.getProposalID()+"|"+promisedProposal.getProposer()+", and the incoming proposal is:"+incomingProposal.getProposalID()+"|"+incomingProposal.getProposer());
 		if (promisedProposal == null || incomingProposal.isGreaterThan(promisedProposal) || incomingProposal.equals(promisedProposal)) {
 			promisedProposal    = incomingProposal;
 			acceptedProposal    = incomingProposal;
 			acceptedValue = value;
-			
+			System.out.println("Send Accept OK message");
 			router.sendAcceptOK(proposerID, incomingProposal);
 		}else{
+			System.out.println("Reject this accept request.");
 			router.sendReject(proposerID, incomingProposal, promisedProposal);
 		}
 	}
-	
-	@Override
-	public void run() {
-		
-	}
+
 	@Override
 	public void receiveCommit(Object value) {
-		// TODO Auto-generated method stub
+		System.out.println("Commit:"+value);
+		promisedProposal = null;
+		acceptedProposal = null;
+		acceptedValue = null;
 	}
 
 }
