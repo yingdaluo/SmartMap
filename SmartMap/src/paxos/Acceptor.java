@@ -9,4 +9,5 @@ public interface Acceptor {
 	public void receiveCommit(Object value);
 	//test
 	//test
+	//test
 }
