@@ -94,7 +94,8 @@ public class DBClass {
 	
 	public static void main(String[] args) {
 		DBClass dbclass = new DBClass();
-		String sqlStmt = "INSERT INTO userlocations (user_name,longitude,latitude) VALUE ('tester2', 20.0, 20.0)";
+		// String sqlStmt = "INSERT INTO userlocations (user_name,longitude,latitude) VALUE ('tester2', 20.0, 20.0)";
+		String sqlStmt = "UPDATE userlocations SET longitude=15.0,latitude=15.0 WHERE user_name='tester2'";
 		String dbName = "smartmap_node1";
 		try {
 			dbclass.Update(sqlStmt, dbName);
