@@ -7,4 +7,5 @@ public interface Acceptor {
 	public void receiveAcceptRequest(String fromProposer, ProposalID incomingProposal, Object value);
 	
 	public void receiveCommit(Object value);
+	//test
 }
