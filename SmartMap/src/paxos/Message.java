@@ -8,7 +8,7 @@ public class Message implements Serializable{
 	 */
 	private static final long serialVersionUID = 6377112373782950816L;
 
-	enum  Type{
+	public enum  Type{
 		Prepare,
 		PrepareOK,
 		Reject, 
@@ -17,16 +17,23 @@ public class Message implements Serializable{
 		Commit
 	}
 	final String senderID;
+	final int instanceID;
 	final Type messageType;
 	final Object value;
 	final ProposalID toProposal;
 	final ProposalID prevAcceptedProposal; 
-	public Message(String senderID, Type type, Object value, ProposalID proposal, ProposalID prevAcceptedProposal) {
+	
+	public Message(String senderID, int instanceID, Type type, Object value, ProposalID proposal, ProposalID prevAcceptedProposal) {
 		this.senderID = senderID;
+		this.instanceID = instanceID;
 		this.messageType = type;
 		this.value = value;
 		this.toProposal = proposal;
 		this.prevAcceptedProposal = prevAcceptedProposal;
+	}
+
+	public int getInstanceID() {
+		return instanceID;
 	}
 
 	public static long getSerialversionuid() {

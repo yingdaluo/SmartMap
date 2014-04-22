@@ -4,6 +4,7 @@ import java.util.HashSet;
 
 public class ProposerImpl implements Proposer {
 	private final int quorum;
+	private int instanceID;
 	private Object proposedValue = null;
 	private ProposalID myProposal;
 	private ProposalID lastAcceptedProposal = null;
@@ -11,16 +12,19 @@ public class ProposerImpl implements Proposer {
 	private HashSet<String> promiseSet   = new HashSet<String>();
 	private HashSet<String> acceptedSet   = new HashSet<String>();
 	private boolean isWorking = false;
-	public ProposerImpl(String proposer, Messenger router, int quorum){
+	public ProposerImpl(int instanceID, String proposer, Messenger router, int quorum){
+		this.instanceID = instanceID;
 		myProposal = new ProposalID(0, proposer);
 		this.router = router;
 		this.quorum = quorum;
 	}
 
 	@Override
-	public void setProposalValue(Object value) {
-		if(!isWorking)
+	public void setNewProposalInstance(int instanceID, Object value) {
+		if(!isWorking){
+			this.instanceID = instanceID;
 			proposedValue = value;
+		}
 	}
 
 	@Override
@@ -31,7 +35,7 @@ public class ProposerImpl implements Proposer {
 		isWorking = true;
 		myProposal.incrementProposalID();
 		System.out.println("Proposer "+myProposal.getProposer()+": I am the proposer of "+ myProposal.getProposer() + ". I will send proposal:"+ myProposal.getProposalID()+","+myProposal.getProposer());
-		router.sendPrepare(myProposal);
+		router.sendPrepare(instanceID, myProposal);
 	}
 
 	@Override
@@ -54,7 +58,7 @@ public class ProposerImpl implements Proposer {
 		}
 		if(promiseSet.size()>=quorum){
 			System.out.println("Proposer "+myProposal.getProposer()+": I want to send accept request of value:"+proposedValue);
-			router.sendAcceptRequest(myProposal, proposedValue);
+			router.sendAcceptRequest(instanceID, myProposal, proposedValue);
 		}
 	}
 
@@ -72,7 +76,7 @@ public class ProposerImpl implements Proposer {
 		if(!proposal.equals(myProposal)|| acceptedSet.contains(acceptorID))
 			return;
 		acceptedSet.add(acceptorID);
-		
+
 		if(acceptedSet.size()>=quorum){
 			commit();
 		}
@@ -91,7 +95,7 @@ public class ProposerImpl implements Proposer {
 
 
 	private void commit(){
-		router.sendCommit(proposedValue);
+		router.sendCommit(instanceID, proposedValue);
 		isWorking = false;
 	}
 

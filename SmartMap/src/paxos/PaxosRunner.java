@@ -10,13 +10,13 @@ public class PaxosRunner {
 		HashMap<String, String> remoteAddressSet = new HashMap<String, String>();
 		remoteAddressSet.put("node1", "localhost:9901");
 		remoteAddressSet.put("node2", "localhost:9902");
-		remoteAddressSet.put("node3", "localhost:9903");
+		//remoteAddressSet.put("node3", "localhost:9903");
 		PaxosServer server1 = new PaxosServer(remoteAddressSet, "node1", "localhost:9901",2);
 		PaxosServer server2 = new PaxosServer(remoteAddressSet, "node2", "localhost:9902",2);
-		PaxosServer server3 = new PaxosServer(remoteAddressSet, "node3", "localhost:9903",2);
+		//PaxosServer server3 = new PaxosServer(remoteAddressSet, "node3", "localhost:9903",2);
 		server1.start();
 		server2.start();
-		server3.start();
+		//server3.start();
 		try {
 			server1.getMyNode().putClientMessageQueue("hahaha");
 		} catch (RemoteException e) {
@@ -33,12 +33,12 @@ public class PaxosRunner {
 		} catch (RemoteException e) {
 			e.printStackTrace();
 		}
-		try {
-			Thread.sleep(5000);
-		} catch (InterruptedException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
+//		try {
+//			Thread.sleep(5000);
+//		} catch (InterruptedException e1) {
+//			// TODO Auto-generated catch block
+//			e1.printStackTrace();
+//		}
 		try {
 			server2.getMyNode().putClientMessageQueue("yesyesyes");
 		} catch (RemoteException e) {

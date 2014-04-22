@@ -16,27 +16,27 @@ public class MessengerImpl implements Messenger{
 	}
 	
 	@Override
-	public void sendPrepare(ProposalID proposal) {
-		Message message =  new Message(nodeID, Message.Type.Prepare, null, proposal, null);
+	public void sendPrepare(int instanceID ,ProposalID proposal) {
+		Message message =  new Message(nodeID, instanceID, Message.Type.Prepare, null, proposal, null);
 		sendMessageToAllAcceptors(message);
 	}
 
 	@Override
-	public void sendAcceptRequest(ProposalID proposal, Object proposalValue) {
-		Message message =  new Message(nodeID, Message.Type.AcceptRequest, proposalValue, proposal, null);
+	public void sendAcceptRequest(int instanceID ,ProposalID proposal, Object proposalValue) {
+		Message message =  new Message(nodeID, instanceID, Message.Type.AcceptRequest, proposalValue, proposal, null);
 		sendMessageToAllAcceptors(message);
 	}
 
 	@Override
-	public void sendCommit(Object value) {
-		Message message =  new Message(null, Message.Type.Commit, value, null, null);
+	public void sendCommit(int instanceID ,Object value) {
+		Message message =  new Message(null, instanceID, Message.Type.Commit, value, null, null);
 		sendMessageToAllAcceptors(message);
 	}
 
 	@Override
-	public void sendPrepareOK(String toProposer, ProposalID fromProposal,
+	public void sendPrepareOK(int instanceID ,String toProposer, ProposalID fromProposal,
 			ProposalID acceptedProposal, Object acceptedValue) {
-		Message message =  new Message(nodeID, Message.Type.PrepareOK, acceptedValue, fromProposal, acceptedProposal);
+		Message message =  new Message(nodeID, instanceID, Message.Type.PrepareOK, acceptedValue, fromProposal, acceptedProposal);
 		PaxosNode remoteNode = getRemoteNode(toProposer);
 		try {
 			remoteNode.putproposerQueue(message);
@@ -46,8 +46,8 @@ public class MessengerImpl implements Messenger{
 	}
 
 	@Override
-	public void sendAcceptOK(String toProposer, ProposalID fromProposal) {
-		Message message =  new Message(nodeID, Message.Type.AcceptOK, null, fromProposal, null);
+	public void sendAcceptOK(int instanceID ,String toProposer, ProposalID fromProposal) {
+		Message message =  new Message(nodeID,instanceID, Message.Type.AcceptOK, null, fromProposal, null);
 		PaxosNode remoteNode = getRemoteNode(toProposer);
 		try {
 			remoteNode.putproposerQueue(message);
@@ -57,9 +57,9 @@ public class MessengerImpl implements Messenger{
 	}
 
 	@Override
-	public void sendReject(String toProposer, ProposalID fromProposal,
+	public void sendReject(int instanceID ,String toProposer, ProposalID fromProposal,
 			ProposalID receivedMaxProposal) {
-		Message message =  new Message(nodeID, Message.Type.Reject, null, fromProposal, receivedMaxProposal);
+		Message message =  new Message(nodeID,instanceID, Message.Type.Reject, null, fromProposal, receivedMaxProposal);
 		PaxosNode remoteNode = getRemoteNode(toProposer);
 		try {
 			remoteNode.putproposerQueue(message);
