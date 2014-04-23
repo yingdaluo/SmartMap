@@ -38,22 +38,28 @@ public class MessengerImpl implements Messenger{
 			ProposalID acceptedProposal, Object acceptedValue) {
 		Message message =  new Message(nodeID, instanceID, Message.Type.PrepareOK, acceptedValue, fromProposal, acceptedProposal);
 		PaxosNode remoteNode = getRemoteNode(toProposer);
-		try {
-			remoteNode.putproposerQueue(message);
-		} catch (RemoteException e) {
-			e.printStackTrace();
+		if(remoteNode!=null){
+			try {
+				remoteNode.putproposerQueue(message);
+			} catch (RemoteException e) {
+				e.printStackTrace();
+			}
 		}
+		
 	}
 
 	@Override
 	public void sendAcceptOK(int instanceID ,String toProposer, ProposalID fromProposal) {
 		Message message =  new Message(nodeID,instanceID, Message.Type.AcceptOK, null, fromProposal, null);
 		PaxosNode remoteNode = getRemoteNode(toProposer);
-		try {
-			remoteNode.putproposerQueue(message);
-		} catch (RemoteException e) {
-			e.printStackTrace();
+		if(remoteNode!=null){
+			try {
+				remoteNode.putproposerQueue(message);
+			} catch (RemoteException e) {
+				e.printStackTrace();
+			}
 		}
+		
 	}
 
 	@Override
@@ -61,20 +67,25 @@ public class MessengerImpl implements Messenger{
 			ProposalID receivedMaxProposal) {
 		Message message =  new Message(nodeID,instanceID, Message.Type.Reject, null, fromProposal, receivedMaxProposal);
 		PaxosNode remoteNode = getRemoteNode(toProposer);
-		try {
-			remoteNode.putproposerQueue(message);
-		} catch (RemoteException e) {
-			e.printStackTrace();
+		if(remoteNode!=null){
+			try {
+				remoteNode.putproposerQueue(message);
+			} catch (RemoteException e) {
+				e.printStackTrace();
+			}
 		}
+		
 	}
 
 	private void sendMessageToAllAcceptors(Message message){
 		for(String remoteNodeID : remoteAddressMap.keySet()){
 			PaxosNode remoteNode = getRemoteNode(remoteNodeID);
-			try {
-				remoteNode.putacceptorQueue(message);
-			} catch (RemoteException e) {
-				e.printStackTrace();
+			if(remoteNode!=null){
+				try {
+					remoteNode.putacceptorQueue(message);
+				} catch (RemoteException e) {
+					e.printStackTrace();
+				}
 			}
 		}
 	}
@@ -88,23 +99,17 @@ public class MessengerImpl implements Messenger{
 	}
 	
 	private void register(String nodeID){
-		while(true)
-			try{
-				String remoteIPAddress = "//"+remoteAddressMap.get(nodeID)+"/RMI";
-				PaxosNode remoteNode =  (PaxosNode)Naming.lookup(remoteIPAddress);
-				nodeMap.put(nodeID, remoteNode);
-				break;
-			} catch (NotBoundException e){
-				try {
-					e.printStackTrace();
-					Thread.sleep(1000);
-				} catch (InterruptedException e1) {
-					e1.printStackTrace();
-				}
-			} catch (MalformedURLException e){
-				e.printStackTrace();
-			} catch (RemoteException e){
-				e.printStackTrace();
-			}
+		try{
+			String remoteIPAddress = "//"+remoteAddressMap.get(nodeID)+"/RMI";
+			PaxosNode remoteNode =  (PaxosNode)Naming.lookup(remoteIPAddress);
+			nodeMap.put(nodeID, remoteNode);
+		} catch (NotBoundException e){
+			
+		} catch (MalformedURLException e){
+			e.printStackTrace();
+		} catch (RemoteException e){
+			System.out.println("Cannot connect to node:"+ nodeID);
+		}
+			
 	}
 }

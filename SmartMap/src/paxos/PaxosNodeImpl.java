@@ -7,9 +7,6 @@ import java.util.HashMap;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import javax.xml.bind.ValidationEvent;
 
 public class PaxosNodeImpl extends UnicastRemoteObject implements PaxosNode {
 	/**
@@ -22,8 +19,7 @@ public class PaxosNodeImpl extends UnicastRemoteObject implements PaxosNode {
 	private int instanceID;
 	private String nodeID;
 	private int deliverIndex = 0;
-
-	private AtomicBoolean newCommit = new AtomicBoolean(false);
+	private boolean finished = false;
 
 	private ConcurrentLinkedDeque<Message> proposerQueue = new ConcurrentLinkedDeque<Message>();
 	private ConcurrentLinkedDeque<Message> acceptorQueue = new ConcurrentLinkedDeque<Message>();
@@ -34,9 +30,13 @@ public class PaxosNodeImpl extends UnicastRemoteObject implements PaxosNode {
 	public PaxosNodeImpl(HashMap<String, String> addressMap,String nodeID, int quorum) throws RemoteException{
 		this.nodeID = nodeID;
 		router = new MessengerImpl(addressMap, nodeID);
-
 		instanceID = 0;
 		proposer = new ProposerImpl(instanceID, nodeID, router, quorum);
+
+		execute();
+	} 
+
+	public void execute(){
 		ProposerHandler proposerHandler = new ProposerHandler();
 		proposerHandler.start();
 
@@ -45,7 +45,8 @@ public class PaxosNodeImpl extends UnicastRemoteObject implements PaxosNode {
 
 		ClientHandler clientHandler = new ClientHandler();
 		clientHandler.start();
-	} 
+
+	}
 
 	public void putproposerQueue(Message message){
 		proposerQueue.add(message);
@@ -71,15 +72,15 @@ public class PaxosNodeImpl extends UnicastRemoteObject implements PaxosNode {
 
 	class ProposerHandler extends Thread{
 		public void run() {
-			while(true){
+			while(!finished){
 				if(!proposerQueue.isEmpty()){
 					Message message = proposerQueue.removeFirst();
 					if(message.getMessageType() == Message.Type.PrepareOK){
-						proposer.receivePrepareOK(message.getToProposal(), message.getPrevAcceptedProposal(), message.getSenderID(), message.getValue());
+						proposer.receivePrepareOK(message.getInstanceID(), message.getToProposal(), message.getPrevAcceptedProposal(), message.getSenderID(), message.getValue());
 					}else if(message.getMessageType()  == Message.Type.AcceptOK){
-						proposer.receiveAcceptOK(message.getToProposal(), message.getSenderID());
+						proposer.receiveAcceptOK(message.getInstanceID(), message.getToProposal(), message.getSenderID());
 					}else if(message.getMessageType()== Message.Type.Reject){
-						proposer.receiveReject(message.getToProposal(), message.getPrevAcceptedProposal());
+						proposer.receiveReject(message.getInstanceID(), message.getToProposal(), message.getPrevAcceptedProposal());
 					}
 				}
 			}
@@ -88,7 +89,7 @@ public class PaxosNodeImpl extends UnicastRemoteObject implements PaxosNode {
 
 	class AcceptorHandler extends Thread{
 		public void run() {
-			while(true){
+			while(!finished){
 				if(!acceptorQueue.isEmpty()){
 					Message message = acceptorQueue.removeFirst();
 					Acceptor acceptor = acceptorMap.get(message.getInstanceID());
@@ -101,7 +102,6 @@ public class PaxosNodeImpl extends UnicastRemoteObject implements PaxosNode {
 					}else if(message.getMessageType()  == Message.Type.AcceptRequest){
 						acceptor.receiveAcceptRequest(message.getToProposal().getProposer(), message.getToProposal(), message.getValue());
 					}else if (message.getMessageType()  == Message.Type.Commit){
-						
 						if(message.getInstanceID()>=committedValues.size()){
 							for(int i= committedValues.size();i<=message.getInstanceID(); i++){
 								committedValues.add(null);
@@ -110,10 +110,8 @@ public class PaxosNodeImpl extends UnicastRemoteObject implements PaxosNode {
 						if(committedValues.get(message.getInstanceID()) == null|| !committedValues.get(message.getInstanceID()).equals(message.getValue())){
 							System.out.println("Insert value:"+message.getValue()+" at committed list index:"+message.getInstanceID());
 							committedValues.insertElementAt(message.getValue(), message.getInstanceID());	
-							//TODO implement durable commit
-							newCommit.set(true);	
+							//TODO implement durable commit	
 						}
-						
 					}
 				}
 			}
@@ -122,12 +120,18 @@ public class PaxosNodeImpl extends UnicastRemoteObject implements PaxosNode {
 
 	class ClientHandler extends Thread{
 		public void run() {
-			while(true){
-				if(acceptorMap.size() == 0||(!proposer.isWorking() && newCommit.get())){
-					newCommit.set(false);
-					if(!clientMsgQueue.isEmpty()){
-						Object value = clientMsgQueue.getFirst();
-						if(!committedValues.contains(value)){
+			while(!finished){
+				if(!clientMsgQueue.isEmpty()){
+					Object value = clientMsgQueue.getFirst();
+					if(acceptorMap.size() == 0){//initial state
+						if(!clientMsgQueue.isEmpty()){
+							value = clientMsgQueue.getFirst();
+							proposer.setNewProposalInstance(instanceID, value);
+							instanceID++;
+							proposer.prepare();
+						}
+					}else if(!proposer.isWorking()){
+						if(!proposer.isCommitSuccess()){
 							System.out.println("Let's prepare again for value :"+ value);
 							value = clientMsgQueue.getFirst();
 							proposer.setNewProposalInstance(instanceID, value);
@@ -144,8 +148,45 @@ public class PaxosNodeImpl extends UnicastRemoteObject implements PaxosNode {
 						}
 					}
 				}
+
+
+//				if(acceptorMap.size() == 0){
+//
+//				}else if((!proposer.isWorking())){
+//					if(){
+//						Object value = clientMsgQueue.getFirst();
+//						if(!proposer.isCommitSuccess()){
+//							System.out.println("Let's prepare again for value :"+ value);
+//							value = clientMsgQueue.getFirst();
+//							proposer.setNewProposalInstance(instanceID, value);
+//							instanceID++;
+//							proposer.prepare();
+//						}else{
+//							clientMsgQueue.removeFirst();
+//							if(!clientMsgQueue.isEmpty()){
+//								value = clientMsgQueue.getFirst();
+//								proposer.setNewProposalInstance(instanceID, value);
+//								instanceID++;
+//								proposer.prepare();
+//							}
+//						}
+//					}
+//				}
 			}
+			System.out.println("ClientHandler closed for node:"+nodeID);
 		}
+	}
+
+	@Override
+	public boolean close() throws RemoteException {
+		finished = true;
+		try {
+			Thread.sleep(1000);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return true;
 	}
 
 

@@ -11,4 +11,5 @@ public interface PaxosNode extends Remote{
 
 	public void putClientMessageQueue(Object value) throws RemoteException;
 	public ArrayList<Object> deliver() throws RemoteException;
+	public boolean close() throws RemoteException;
 }

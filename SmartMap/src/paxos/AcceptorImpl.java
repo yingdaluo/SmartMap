@@ -37,7 +37,8 @@ public class AcceptorImpl implements Acceptor {
 		if (promisedProposal == null || incomingProposal.isGreaterThan(promisedProposal) || incomingProposal.equals(promisedProposal)) {
 			promisedProposal    = incomingProposal;
 			acceptedProposal    = incomingProposal;
-			acceptedValue = value;
+			if(acceptedValue == null)
+				acceptedValue = value;
 			//System.out.println("Send Accept OK message");
 			router.sendAcceptOK(instanceID, proposerID, incomingProposal);
 		}else{
