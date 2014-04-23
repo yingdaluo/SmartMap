@@ -10,5 +10,9 @@ public interface Messenger {
 	public void sendPrepareOK(int instanceID ,String toProposer, ProposalID fromProposal, ProposalID acceptedProposal, Object acceptedValue);
 	public void sendAcceptOK(int instanceID ,String toProposer, ProposalID fromProposal);
 	public void sendReject(int instanceID ,String toProposer, ProposalID fromProposal, ProposalID receivedMaxProposal);
-
+	
+	//For node recovery
+	public void sendCommitToSingleNode(int instanceID, Object value, String toNodeID);
+	public void sendCommitRequest(int instanceID);
+	
 }
