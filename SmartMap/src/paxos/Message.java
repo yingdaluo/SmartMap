@@ -14,7 +14,8 @@ public class Message implements Serializable{
 		Reject, 
 		AcceptRequest, 
 		AcceptOK,
-		Commit
+		Commit,
+		CommitRequest
 	}
 	final String senderID;
 	final int instanceID;

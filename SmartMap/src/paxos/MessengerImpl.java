@@ -67,6 +67,24 @@ public class MessengerImpl implements Messenger{
 			e.printStackTrace();
 		}
 	}
+	
+	@Override
+	public void sendCommitToSingleNode(int instanceID, Object value, String toNodeID) {
+		Message message = new Message(nodeID, instanceID, Message.Type.Commit, value, null, null);
+		PaxosNode remoteNode = getRemoteNode(toNodeID);
+		try {
+			remoteNode.putacceptorQueue(message);
+		} catch (RemoteException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	@Override
+	public void sendCommitRequest(int instanceID) {
+		Message message = new Message(nodeID, instanceID, Message.Type.CommitRequest, null, null, null);
+		sendMessageToAllAcceptors(message);
+	}
+	
 
 	private void sendMessageToAllAcceptors(Message message){
 		for(String remoteNodeID : remoteAddressMap.keySet()){
