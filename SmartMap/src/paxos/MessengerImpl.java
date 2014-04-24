@@ -5,11 +5,15 @@ import java.rmi.Naming;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.util.HashMap;
+import java.util.Random;
 
 public class MessengerImpl implements Messenger{
 	private final HashMap<String, String> remoteAddressMap;
 	private HashMap<String, PaxosNode> nodeMap =  new HashMap<String, PaxosNode>();
 	private String nodeID;
+	private HashMap<String, String> deadNodes =  new HashMap<String, String>();
+	private int maxDelay = 0;
+	
 	public MessengerImpl(HashMap<String, String> remoteAddressMap, String nodeID) {
 		this.remoteAddressMap = remoteAddressMap;
 		this.nodeID = nodeID;
@@ -40,6 +44,7 @@ public class MessengerImpl implements Messenger{
 		PaxosNode remoteNode = getRemoteNode(toProposer);
 		if(remoteNode!=null){
 			try {
+				enjoyDelay();
 				remoteNode.putproposerQueue(message);
 			} catch (RemoteException e) {
 				e.printStackTrace();
@@ -54,6 +59,7 @@ public class MessengerImpl implements Messenger{
 		PaxosNode remoteNode = getRemoteNode(toProposer);
 		if(remoteNode!=null){
 			try {
+				enjoyDelay();
 				remoteNode.putproposerQueue(message);
 			} catch (RemoteException e) {
 				e.printStackTrace();
@@ -81,10 +87,13 @@ public class MessengerImpl implements Messenger{
 	public void sendCommitToSingleNode(int instanceID, Object value, String toNodeID) {
 		Message message = new Message(nodeID, instanceID, Message.Type.Commit, value, null, null);
 		PaxosNode remoteNode = getRemoteNode(toNodeID);
-		try {
-			remoteNode.putacceptorQueue(message);
-		} catch (RemoteException e) {
-			e.printStackTrace();
+		if(remoteNode!=null){
+			try {
+				enjoyDelay();
+				remoteNode.putacceptorQueue(message);
+			} catch (RemoteException e) {
+				e.printStackTrace();
+			}
 		}
 	}
 	
@@ -100,6 +109,7 @@ public class MessengerImpl implements Messenger{
 			PaxosNode remoteNode = getRemoteNode(remoteNodeID);
 			if(remoteNode!=null){
 				try {
+					enjoyDelay();
 					remoteNode.putacceptorQueue(message);
 				} catch (RemoteException e) {
 					e.printStackTrace();
@@ -112,6 +122,8 @@ public class MessengerImpl implements Messenger{
 	private PaxosNode getRemoteNode(String nodeID){
 		if(nodeMap.containsKey(nodeID))
 			return nodeMap.get(nodeID);
+		if(deadNodes.containsKey(nodeID))
+			return null;
 		register(nodeID);
 		return nodeMap.get(nodeID);
 	}
@@ -126,8 +138,27 @@ public class MessengerImpl implements Messenger{
 		} catch (MalformedURLException e){
 			e.printStackTrace();
 		} catch (RemoteException e){
-			System.out.println("Cannot connect to node:"+ nodeID);
+			deadNodes.put(nodeID, nodeID);
+			//System.out.println("Cannot connect to node:"+ nodeID);
 		}
 			
+	}
+
+	@Override
+	public void setMaxDelay(int maxDelay) {
+		this.maxDelay = maxDelay;
+	}
+	
+	private void enjoyDelay(){
+		if(maxDelay == 0)
+			return;
+		try {
+			Random random = new Random();
+			int delay = random.nextInt(maxDelay);
+			Thread.sleep(delay);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 }

@@ -15,4 +15,7 @@ public interface Messenger {
 	public void sendCommitToSingleNode(int instanceID, Object value, String toNodeID);
 	public void sendCommitRequest(int instanceID);
 	
+	//For testing usage
+	
+	public void setMaxDelay(int maxDelay);
 }

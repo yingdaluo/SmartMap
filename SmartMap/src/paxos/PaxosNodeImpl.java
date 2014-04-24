@@ -5,6 +5,7 @@ import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Random;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
@@ -19,6 +20,7 @@ public class PaxosNodeImpl extends UnicastRemoteObject implements PaxosNode {
 	private Messenger router;
 	private int instanceID;
 	private String nodeID;
+	private double lostPossibility = 0;
 	private int deliverIndex = 0;
 
 	private boolean finished = false;
@@ -54,12 +56,43 @@ public class PaxosNodeImpl extends UnicastRemoteObject implements PaxosNode {
 		commitRecovery.start();
 	}
 
-	public void putproposerQueue(Message message){
-		proposerQueue.add(message);
+	@Override
+	public void setLostPossibility(double possibility){
+		this.lostPossibility = possibility;
 	}
 
+	@Override
+	public void putproposerQueue(Message message){
+		if(lostPossibility!=0){
+			Random rand = new Random(System.currentTimeMillis());
+			double chanceNow = rand.nextInt(100)/100.00;
+			if(chanceNow>lostPossibility){
+				//	//System.out.println("rand.nextDouble() is "+chanceNow+", lostPossibility is :"+lostPossibility+".Message passed");
+				proposerQueue.add(message);
+			}
+			else{
+				//	//System.out.println("rand.nextDouble() is "+chanceNow+", lostPossibility is :"+lostPossibility+".Message lost");
+			}
+		}else {
+			proposerQueue.add(message);
+		}
+	}
+	@Override
 	public void putacceptorQueue(Message message){
-		acceptorQueue.add(message);
+		if(lostPossibility!=0){
+			Random rand = new Random(System.currentTimeMillis());
+			double chanceNow = rand.nextInt(100)/100.00;
+			if(chanceNow>lostPossibility){
+				//	//System.out.println("rand.nextDouble() is "+chanceNow+", lostPossibility is :"+lostPossibility+".Message passed");
+				acceptorQueue.add(message);
+			}
+			else{
+				//	//System.out.println("rand.nextDouble() is "+chanceNow+", lostPossibility is :"+lostPossibility+".Message lost");
+			}
+
+		}else {
+			acceptorQueue.add(message);
+		}
 	}
 
 	@Override
@@ -69,7 +102,7 @@ public class PaxosNodeImpl extends UnicastRemoteObject implements PaxosNode {
 
 	public ArrayList<Object> deliver(){
 		ArrayList<Object> resultList =  new ArrayList<Object>();
-		while(committedValues.get(deliverIndex)!=null){
+		while(committedValues.size()>deliverIndex && committedValues.get(deliverIndex)!=null){
 			resultList.add(committedValues.get(deliverIndex));
 			deliverIndex++;
 		}
@@ -97,7 +130,7 @@ public class PaxosNodeImpl extends UnicastRemoteObject implements PaxosNode {
 						committedValues.add(null);
 					}	
 				}	
-				committedValues.insertElementAt(value, id);
+				committedValues.setElementAt(value, id);
 			}
 
 		} catch (FileNotFoundException e) {
@@ -151,11 +184,12 @@ public class PaxosNodeImpl extends UnicastRemoteObject implements PaxosNode {
 							for(int i= committedValues.size();i<=message.getInstanceID(); i++){
 								committedValues.add(null);
 							}	
+							//System.out.println("committedValues size is: "+committedValues.size());
 						}
 						if(committedValues.get(message.getInstanceID()) == null|| !committedValues.get(message.getInstanceID()).equals(message.getValue())){
-							System.out.println("Insert value:"+message.getValue()+" at committed list index:"+message.getInstanceID());
-							committedValues.insertElementAt(message.getValue(), message.getInstanceID());	
-
+							//System.out.println("Node id:"+nodeID+". Insert value:"+message.getValue()+" at committed list index:"+message.getInstanceID());
+							committedValues.setElementAt(message.getValue(), message.getInstanceID());	
+							//System.out.println("committedValues size is: "+committedValues.size()+"Last Element is:" + committedValues.lastElement());
 							// Durable commit: write the new committed value to the log file
 							try(PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter(logFileName, true)))) {
 								out.println(Integer.toString(message.getInstanceID())+logSplitBy+message.getValue().toString());
@@ -173,6 +207,11 @@ public class PaxosNodeImpl extends UnicastRemoteObject implements PaxosNode {
 							if (value != null) {
 								router.sendCommitToSingleNode(message.getInstanceID(), value, message.getSenderID());
 							}
+						}else if(!committedValues.isEmpty() && message.getInstanceID() == Integer.MAX_VALUE){
+							Object value = committedValues.lastElement();
+							if (value != null) {
+								router.sendCommitToSingleNode(committedValues.size()-1, value, message.getSenderID());
+							}
 						}
 
 					}
@@ -186,7 +225,7 @@ public class PaxosNodeImpl extends UnicastRemoteObject implements PaxosNode {
 			while(!finished){
 				if(!clientMsgQueue.isEmpty()){
 					Object value = clientMsgQueue.getFirst();
-					if(acceptorMap.size() == 0){//initial state
+					if(acceptorMap.size() == 0 && !proposer.isWorking()){//initial state
 						if(!clientMsgQueue.isEmpty()){
 							value = clientMsgQueue.getFirst();
 							proposer.setNewProposalInstance(instanceID, value);
@@ -195,7 +234,7 @@ public class PaxosNodeImpl extends UnicastRemoteObject implements PaxosNode {
 						}
 					}else if(!proposer.isWorking()){
 						if(!proposer.isCommitSuccess()){
-							System.out.println("Let's prepare again for value :"+ value);
+							//System.out.println("Let's prepare again for value :"+ value);
 							value = clientMsgQueue.getFirst();
 							proposer.setNewProposalInstance(instanceID, value);
 							instanceID++;
@@ -219,7 +258,7 @@ public class PaxosNodeImpl extends UnicastRemoteObject implements PaxosNode {
 				//					if(){
 				//						Object value = clientMsgQueue.getFirst();
 				//						if(!proposer.isCommitSuccess()){
-				//							System.out.println("Let's prepare again for value :"+ value);
+				//							//System.out.println("Let's prepare again for value :"+ value);
 				//							value = clientMsgQueue.getFirst();
 				//							proposer.setNewProposalInstance(instanceID, value);
 				//							instanceID++;
@@ -236,7 +275,7 @@ public class PaxosNodeImpl extends UnicastRemoteObject implements PaxosNode {
 				//					}
 				//				}
 			}
-			System.out.println("ClientHandler closed for node:"+nodeID);
+			//System.out.println("ClientHandler closed for node:"+nodeID);
 		}
 	}
 
@@ -254,14 +293,16 @@ public class PaxosNodeImpl extends UnicastRemoteObject implements PaxosNode {
 
 	class CommitRecovery extends Thread{
 		public void run() {
-			while(true){
+			while(!finished){
 				// scan the committedValue and request committed values if it is necessary
 				for (int i=0;i < committedValues.size();i++){
 					if(committedValues.get(i) == null){
 						// send request to all accepters for committed value to a particular instance ID
+						//System.out.println("Node id:"+nodeID +", committedValues.size() = " +committedValues.size() +". Missed index:"+i);
 						router.sendCommitRequest(i);
 					}
 				}
+				router.sendCommitRequest(Integer.MAX_VALUE);
 
 				try {
 					Thread.sleep(1000);
@@ -271,6 +312,11 @@ public class PaxosNodeImpl extends UnicastRemoteObject implements PaxosNode {
 			}
 
 		}
+	}
+
+	@Override
+	public void setDelay(int maxDelay){
+		router.setMaxDelay(maxDelay);
 	}
 
 
