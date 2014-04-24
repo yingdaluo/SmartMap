@@ -508,13 +508,17 @@ public class PaxosTest {
 		}
 
 		try {
-			for(int i=0; i<9; i++){
-				if(i%2 ==0 ){
-					PaxosServer server = serverList.get(i);
-					for(int j=0; j<10; j++){
-						server.getMyNode().putClientMessageQueue("value"+String.valueOf(i)+String.valueOf(j));
-					}
-				}
+//			for(int i=0; i<9; i++){
+//				if(i%2 ==0 ){
+//					PaxosServer server = serverList.get(i);
+//					for(int j=0; j<1000; j++){
+//						server.getMyNode().putClientMessageQueue("value"+String.valueOf(i)+String.valueOf(j));
+//					}
+//				}
+//			}
+			PaxosServer server = serverList.get(0);
+			for(int j=0; j<1000; j++){
+				server.getMyNode().putClientMessageQueue("value"+String.valueOf(0)+String.valueOf(j));
 			}
 		} catch (RemoteException e) {
 			e.printStackTrace();
