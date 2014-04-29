@@ -508,14 +508,6 @@ public class PaxosTest {
 		}
 
 		try {
-//			for(int i=0; i<9; i++){
-//				if(i%2 ==0 ){
-//					PaxosServer server = serverList.get(i);
-//					for(int j=0; j<1000; j++){
-//						server.getMyNode().putClientMessageQueue("value"+String.valueOf(i)+String.valueOf(j));
-//					}
-//				}
-//			}
 			PaxosServer server = serverList.get(0);
 			for(int j=0; j<1000; j++){
 				server.getMyNode().putClientMessageQueue("value"+String.valueOf(0)+String.valueOf(j));
@@ -595,7 +587,7 @@ public class PaxosTest {
 //		test.BasicTest4();
 //		test.BasicTest5();
 //		test.BasicTest6();
-		test.BasicTest7();
+//		test.BasicTest7();
 		System.exit(0);
 	}
 }

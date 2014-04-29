@@ -18,4 +18,7 @@ public interface PaxosNode extends Remote{
 	public void setLostPossibility(double possibility) throws RemoteException;
 
 	public void setDelay(int delay) throws RemoteException;
+	
+	public void recover()throws RemoteException;
+	
 }
