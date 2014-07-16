@@ -8,7 +8,7 @@ import java.util.HashMap;
 import java.util.Random;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class PaxosNodeImpl extends UnicastRemoteObject implements PaxosNode {
@@ -18,29 +18,29 @@ public class PaxosNodeImpl extends UnicastRemoteObject implements PaxosNode {
 	private static final long serialVersionUID = -8138096021948421274L;
 	private ConcurrentHashMap<Integer, Acceptor> acceptorMap = new ConcurrentHashMap<Integer, Acceptor>();
 	private Proposer proposer;
-	private Messenger router;
+	private Messenger messenger;
 
 	private AtomicInteger instanceID = new AtomicInteger();
 	private String nodeID;
 	private double lostPossibility = 0;
 	private int deliverIndex = 0;
-
+	private Object value = null;
 	private boolean finished = false;
 	private String logFileName;
 	private static final String logSplitBy = ",";
 
-	private ConcurrentLinkedDeque<Message> proposerQueue = new ConcurrentLinkedDeque<Message>();
-	private ConcurrentLinkedDeque<Message> acceptorQueue = new ConcurrentLinkedDeque<Message>();
-	private ConcurrentLinkedDeque<Object> clientMsgQueue = new ConcurrentLinkedDeque<Object>();
+	private LinkedBlockingQueue<Message> proposerQueue = new LinkedBlockingQueue<Message>();
+	private LinkedBlockingQueue<Message> acceptorQueue = new LinkedBlockingQueue<Message>();
+	private LinkedBlockingQueue<Object> clientMsgQueue = new LinkedBlockingQueue<Object>();
 	private Vector<Object> committedValues = new Vector<Object>();
 
 
 	public PaxosNodeImpl(HashMap<String, String> addressMap,String nodeID, int quorum) throws RemoteException{
 		this.nodeID = nodeID;
 		logFileName = nodeID + ".log";
-		router = new MessengerImpl(addressMap, nodeID);
+		messenger = new MessengerImpl(addressMap, nodeID);
 		instanceID.set(0);
-		proposer = new ProposerImpl(instanceID.get(), nodeID, router, quorum);
+		proposer = new ProposerImpl(instanceID.get(), nodeID, messenger, quorum);
 
 		execute();
 	} 
@@ -70,20 +70,11 @@ public class PaxosNodeImpl extends UnicastRemoteObject implements PaxosNode {
 			Random rand = new Random(System.currentTimeMillis());
 			double chanceNow = rand.nextInt(100)/100.00;
 			if(chanceNow>lostPossibility){
-				//	//System.out.println("rand.nextDouble() is "+chanceNow+", lostPossibility is :"+lostPossibility+".Message passed");
-				synchronized (proposerQueue) {
-					proposerQueue.add(message);
-					proposerQueue.notify();
-				}
-			}
-			else{
-				//	//System.out.println("rand.nextDouble() is "+chanceNow+", lostPossibility is :"+lostPossibility+".Message lost");
+				//System.out.println("rand.nextDouble() is "+chanceNow+", lostPossibility is :"+lostPossibility+".Message passed");
+				proposerQueue.add(message);
 			}
 		}else {
-			synchronized (proposerQueue) {
-				proposerQueue.add(message);
-				proposerQueue.notify();
-			}
+			proposerQueue.add(message);
 		}
 	}
 
@@ -93,13 +84,8 @@ public class PaxosNodeImpl extends UnicastRemoteObject implements PaxosNode {
 			Random rand = new Random(System.currentTimeMillis());
 			double chanceNow = rand.nextInt(100)/100.00;
 			if(chanceNow>lostPossibility){
-				//	//System.out.println("rand.nextDouble() is "+chanceNow+", lostPossibility is :"+lostPossibility+".Message passed");
 				acceptorQueue.add(message);
 			}
-			else{
-				//	//System.out.println("rand.nextDouble() is "+chanceNow+", lostPossibility is :"+lostPossibility+".Message lost");
-			}
-
 		}else {
 			acceptorQueue.add(message);
 		}
@@ -107,7 +93,11 @@ public class PaxosNodeImpl extends UnicastRemoteObject implements PaxosNode {
 
 	@Override
 	public void putClientMessageQueue(Object value) throws RemoteException {
-		clientMsgQueue.add(value);
+		synchronized (clientMsgQueue) {
+			clientMsgQueue.add(value);
+			clientMsgQueue.notify();
+		}
+		//clientMsgQueue.add(value);
 	}
 
 	public ArrayList<Object> deliver(){
@@ -143,7 +133,7 @@ public class PaxosNodeImpl extends UnicastRemoteObject implements PaxosNode {
 					}	
 				}	
 				committedValues.setElementAt(value, id);
-				Acceptor acceptor =  new AcceptorImpl(id, router);
+				Acceptor acceptor =  new AcceptorImpl(id, messenger);
 				acceptorMap.put(id, acceptor);
 				acceptor.receiveAcceptRequest(nodeID, new ProposalID(100, nodeID), value);
 			}
@@ -167,22 +157,17 @@ public class PaxosNodeImpl extends UnicastRemoteObject implements PaxosNode {
 	class ProposerHandler extends Thread{
 		public void run() {
 			while(!finished){
-				synchronized (proposerQueue) {
-					while(!proposerQueue.isEmpty()){
-						Message message = proposerQueue.removeFirst();
-						if(message.getMessageType() == Message.Type.PrepareOK){
-							proposer.receivePrepareOK(message.getInstanceID(), message.getToProposal(), message.getPrevAcceptedProposal(), message.getSenderID(), message.getValue());
-						}else if(message.getMessageType()  == Message.Type.AcceptOK){
-							proposer.receiveAcceptOK(message.getInstanceID(), message.getToProposal(), message.getSenderID());
-						}else if(message.getMessageType()== Message.Type.Reject){
-							proposer.receiveReject(message.getInstanceID(), message.getToProposal(), message.getPrevAcceptedProposal());
-						}
+				try {
+					Message message = proposerQueue.take();
+					if(message.getMessageType() == Message.Type.PrepareOK){
+						proposer.receivePrepareOK(message.getInstanceID(), message.getToProposal(), message.getPrevAcceptedProposal(), message.getSenderID(), message.getValue());
+					}else if(message.getMessageType()  == Message.Type.AcceptOK){
+						proposer.receiveAcceptOK(message.getInstanceID(), message.getToProposal(), message.getSenderID());
+					}else if(message.getMessageType()== Message.Type.Reject){
+						proposer.receiveReject(message.getInstanceID(), message.getToProposal(), message.getPrevAcceptedProposal());
 					}
-					try {
-						proposerQueue.wait();
-					} catch (InterruptedException e) {
-						e.printStackTrace();
-					}
+				} catch (InterruptedException e) {
+					e.printStackTrace();
 				}
 			}
 		}
@@ -191,11 +176,13 @@ public class PaxosNodeImpl extends UnicastRemoteObject implements PaxosNode {
 	class AcceptorHandler extends Thread{
 		public void run() {
 			while(!finished){
-				while(!acceptorQueue.isEmpty()){
-					Message message = acceptorQueue.removeFirst();
+				Message message;
+				try {
+					message = acceptorQueue.take();
+
 					Acceptor acceptor = acceptorMap.get(message.getInstanceID());
 					if(acceptor == null){
-						acceptor =  new AcceptorImpl(message.getInstanceID(), router);
+						acceptor =  new AcceptorImpl(message.getInstanceID(), messenger);
 						acceptorMap.put(message.getInstanceID(), acceptor);
 					}					
 					if(message.getMessageType() == Message.Type.Prepare){
@@ -207,6 +194,8 @@ public class PaxosNodeImpl extends UnicastRemoteObject implements PaxosNode {
 					}else if (message.getMessageType()  == Message.Type.CommitRequest){
 						commitRequest(message);
 					}
+				} catch (InterruptedException e) {
+					e.printStackTrace();
 				}
 			}
 		}
@@ -216,12 +205,12 @@ public class PaxosNodeImpl extends UnicastRemoteObject implements PaxosNode {
 		if (committedValues.size() > message.getInstanceID()){
 			Object value = committedValues.get(message.getInstanceID());
 			if (value != null) {
-				router.sendCommitToSingleNode(message.getInstanceID(), value, message.getSenderID());
+				messenger.sendCommitToSingleNode(message.getInstanceID(), value, message.getSenderID());
 			}
 		}else if(!committedValues.isEmpty() && message.getInstanceID() == Integer.MAX_VALUE){
 			Object value = committedValues.lastElement();
 			if (value != null) {
-				router.sendCommitToSingleNode(committedValues.size()-1, value, message.getSenderID());
+				messenger.sendCommitToSingleNode(committedValues.size()-1, value, message.getSenderID());
 			}
 		}
 	}
@@ -231,14 +220,12 @@ public class PaxosNodeImpl extends UnicastRemoteObject implements PaxosNode {
 			for(int i= committedValues.size();i<=message.getInstanceID(); i++){
 				committedValues.add(null);
 			}	
-			//System.out.println("committedValues size is: "+committedValues.size());
 		}
 		if(committedValues.get(message.getInstanceID()) == null|| !committedValues.get(message.getInstanceID()).equals(message.getValue())){
-			//System.out.println("Node id:"+nodeID+". Insert value:"+message.getValue()+" at committed list index:"+message.getInstanceID());
 			committedValues.setElementAt(message.getValue(), message.getInstanceID());	
-			//System.out.println("committedValues size is: "+committedValues.size()+"Last Element is:" + committedValues.lastElement());
 			// Durable commit: write the new committed value to the log file
-			try(PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter(logFileName, true)))) {
+			try{
+				PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter(logFileName, true)));
 				out.println(Integer.toString(message.getInstanceID())+logSplitBy+message.getValue().toString());
 				out.close();
 			}catch (IOException e) {
@@ -251,34 +238,35 @@ public class PaxosNodeImpl extends UnicastRemoteObject implements PaxosNode {
 	class ClientHandler extends Thread{
 		public void run() {
 			while(!finished){
-				while(!clientMsgQueue.isEmpty()){
-					Object value = clientMsgQueue.getFirst();
-					if(acceptorMap.size() == 0 && !proposer.isWorking()){//initial state
-						if(!clientMsgQueue.isEmpty()){
-							value = clientMsgQueue.getFirst();
-							proposer.setNewProposalInstance(instanceID.get(), value);
-							instanceID.set(instanceID.get()+1);
-							proposer.prepare();
-						}
-					}else if(!proposer.isWorking()){
-						if(!proposer.isCommitSuccess()){
-							//System.out.println("Let's prepare again for value :"+ value);
-							value = clientMsgQueue.getFirst();
-							proposer.setNewProposalInstance(instanceID.get(), value);
-							instanceID.set(instanceID.get()+1);
-							proposer.prepare();
-						}else{
-							clientMsgQueue.removeFirst();
-							if(!clientMsgQueue.isEmpty()){
-								value = clientMsgQueue.getFirst();
-								proposer.setNewProposalInstance(instanceID.get(), value);
-								instanceID.set(instanceID.get()+1);
-								proposer.prepare();
-							}
-						}
+				if(acceptorMap.size() == 0 && !proposer.isWorking()){//initial state
+					try {
+						value = clientMsgQueue.take();
+						proposer.setNewProposalInstance(instanceID.get(), value);
+						instanceID.set(instanceID.get()+1);
+						proposer.prepare();
+					} catch (InterruptedException e) {
+						e.printStackTrace();
 					}
-				}	
+
+				}else if(!proposer.isWorking()){
+					if(!proposer.isCommitSuccess()){
+						proposer.setNewProposalInstance(instanceID.get(), value);
+						instanceID.set(instanceID.get()+1);
+						proposer.prepare();
+					}else{
+						try {
+							value = clientMsgQueue.take();
+							proposer.setNewProposalInstance(instanceID.get(), value);
+							instanceID.set(instanceID.get()+1);
+							proposer.prepare();
+						} catch (InterruptedException e) {
+							e.printStackTrace();
+						}
+
+					}
+				}
 			}
+
 		}
 	}
 
@@ -300,13 +288,12 @@ public class PaxosNodeImpl extends UnicastRemoteObject implements PaxosNode {
 				for (int i=0; i < committedValues.size(); i++){
 					if(committedValues.get(i) == null){
 						// send request to all accepters for committed value to a particular instance ID
-						//System.out.println("Node id:"+nodeID +", committedValues.size() = " +committedValues.size() +". Missed index:"+i);
-						router.sendCommitRequest(i);
+						messenger.sendCommitRequest(i);
 					}
 				}
-				router.sendCommitRequest(Integer.MAX_VALUE);
+				messenger.sendCommitRequest(Integer.MAX_VALUE);
 				try {
-					Thread.sleep(1000);
+					Thread.sleep(100);
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}
@@ -316,7 +303,7 @@ public class PaxosNodeImpl extends UnicastRemoteObject implements PaxosNode {
 
 	@Override
 	public void setDelay(int maxDelay){
-		router.setMaxDelay(maxDelay);
+		messenger.setMaxDelay(maxDelay);
 	}
 
 

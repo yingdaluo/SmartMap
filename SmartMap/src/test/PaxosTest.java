@@ -10,10 +10,10 @@ public class PaxosTest {
 
 	private void BasicTest1(){
 		/**
-		 * Basic test 1. Three proposers will propose 3 proposals to all nodes concurrently. Test if all proposals are committed in same sequence for each of them.
+		 * Basic test 1. Three proposers will propose 6 proposals to all nodes concurrently. Test if all proposals are committed in same sequence for each of them.
 		 * Node Number: 3
 		 * Active Proposers: 3
-		 * Proposals for each proposer: 1.
+		 * Proposals for each proposer: 2.
 		 * */
 		System.out.println("BasicTest1 start");
 		HashMap<String, String> remoteAddressSet = new HashMap<String, String>();
@@ -40,7 +40,6 @@ public class PaxosTest {
 		try {
 			Thread.sleep(2000);
 		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 
@@ -53,7 +52,10 @@ public class PaxosTest {
 			list.add(list1);
 			list.add(list2);
 			list.add(list3);
-
+			System.out.println("Deliver result for server1:");
+			System.out.println(list1);
+			System.out.println("Deliver result for server2:");
+			System.out.println(list2);
 			if(isValidLength(list,6)&& isIdentical(list))
 				System.out.println("Basic Test 1 passed");
 			else 
@@ -98,9 +100,9 @@ public class PaxosTest {
 		}
 
 		try {
-			Thread.sleep(20000);
+			Thread.sleep(5000);
 		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
+
 			e.printStackTrace();
 		}
 
@@ -118,6 +120,11 @@ public class PaxosTest {
 			list.add(list2);
 			list.add(list3);
 
+
+			System.out.println("Deliver result for server1:");
+			System.out.println(list1);
+			System.out.println("Deliver result for server2:");
+			System.out.println(list2);
 			if(isValidLength(list,3)&& isIdenticalWith(list, sampleList))
 				System.out.println("Basic Test 2 passed");
 			else 
@@ -136,7 +143,7 @@ public class PaxosTest {
 	private void BasicTest3(){
 		/**
 		 * Basic test 3. Two proposers will propose 2 proposals to all 5 nodes. 
-		 * Three nodes are of 50% chance to lose message (both in proposers and in acceptors)
+		 * Three nodes are of 30% chance to lose message (both in proposers and in acceptors)
 		 * Test if all proposals are committed in same sequence.
 		 * Node Number: 5
 		 * Active Proposers: 2
@@ -171,7 +178,6 @@ public class PaxosTest {
 			server4.getMyNode().setLostPossibility(0.3);
 			server5.getMyNode().setLostPossibility(0.3);
 		} catch (RemoteException e1) {
-			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
 
@@ -187,7 +193,7 @@ public class PaxosTest {
 		try {
 			Thread.sleep(30000);
 		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
+
 			e.printStackTrace();
 		}
 
@@ -203,7 +209,14 @@ public class PaxosTest {
 			list.add(list3);
 			list.add(list4);
 			list.add(list5);
-
+			System.out.println("Deliver result for server1:");
+			System.out.println(list1);
+			System.out.println("Deliver result for server2:");
+			System.out.println(list2);
+			System.out.println("Deliver result for server3:");
+			System.out.println(list3);
+			System.out.println("Deliver result for server4:");
+			System.out.println(list4);
 			if(isValidLength(list,4)&& isIdentical(list))
 				System.out.println("Basic Test 3 passed");
 			else 
@@ -274,7 +287,6 @@ public class PaxosTest {
 		try {
 			Thread.sleep(60000);
 		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 
@@ -291,6 +303,14 @@ public class PaxosTest {
 			list.add(list4);
 			list.add(list5);
 
+			System.out.println("Deliver result for server1:");
+			System.out.println(list1);
+			System.out.println("Deliver result for server2:");
+			System.out.println(list2);
+			System.out.println("Deliver result for server3:");
+			System.out.println(list3);
+			System.out.println("Deliver result for server4:");
+			System.out.println(list4);
 			if(isValidLength(list,4)&& isIdentical(list))
 				System.out.println("Basic Test 4 passed");
 			else 
@@ -382,6 +402,14 @@ public class PaxosTest {
 			list.add(list3);
 			list.add(list4);
 			list.add(list5);
+			System.out.println("Deliver result for server1:");
+			System.out.println(list1);
+			System.out.println("Deliver result for server2:");
+			System.out.println(list2);
+			System.out.println("Deliver result for server3:");
+			System.out.println(list3);
+			System.out.println("Deliver result for server4:");
+			System.out.println(list4);
 
 			if(isValidLength(list,4)&& isIdentical(list))
 				System.out.println("Basic Test 5 passed");
@@ -461,10 +489,23 @@ public class PaxosTest {
 			ArrayList<Object> list1 = server1.getMyNode().deliver();
 			ArrayList<Object> list2 = server2.getMyNode().deliver();
 			ArrayList<Object> list3 = server3.getMyNode().deliver();
+			ArrayList<Object> list4 = server4.getMyNode().deliver();
+			ArrayList<Object> list5 = server5.getMyNode().deliver();
 			ArrayList<ArrayList<Object>> list = new ArrayList<ArrayList<Object>>();
 			list.add(list1);
 			list.add(list2);
 			list.add(list3);
+			list.add(list4);
+			list.add(list5);
+
+			System.out.println("Deliver result for server1:");
+			System.out.println(list1);
+			System.out.println("Deliver result for server2:");
+			System.out.println(list2);
+			System.out.println("Deliver result for server3:");
+			System.out.println(list3);
+			System.out.println("Deliver result for server4:");
+			System.out.println(list4);
 
 			if(isValidLength(list,4)&& isIdentical(list))
 				System.out.println("Basic Test 6 passed");
@@ -483,66 +524,7 @@ public class PaxosTest {
 	}
 
 
-	private void BasicTest7(){
-		/**
-		 * Basic test 7. Stress test.
-		 * Node Number: 9
-		 * Active Proposers: 5
-		 * Proposals for each proposer: 10.
-		 * No delay, no message lost.
-		 * No network partition.
-		 * */
-		System.out.println("BasicTest7 start");
-		HashMap<String, String> remoteAddressSet = new HashMap<String, String>();
-		ArrayList<PaxosServer> serverList =  new ArrayList<PaxosServer>(9);
-		for(int i=1; i<10; i++){
-			remoteAddressSet.put("node"+i, "localhost:990"+i);
-		}
 
-		for(int i=1; i<10; i++){
-			PaxosServer server = new PaxosServer(remoteAddressSet, "node"+i, "localhost:990"+i,5);
-			serverList.add(server);
-		}
-		for(int i=0; i<9; i++){
-			serverList.get(i).start();
-		}
-
-		try {
-			PaxosServer server = serverList.get(0);
-			for(int j=0; j<1000; j++){
-				server.getMyNode().putClientMessageQueue("value"+String.valueOf(0)+String.valueOf(j));
-			}
-		} catch (RemoteException e) {
-			e.printStackTrace();
-		}
-
-		try {
-			Thread.sleep(30000);
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-
-		try {
-			ArrayList<ArrayList<Object>> list = new ArrayList<ArrayList<Object>>();
-			for(int i=0; i<9; i++){
-				ArrayList<Object> resultlist = serverList.get(i).getMyNode().deliver();
-				list.add(resultlist);
-			}
-
-			if(isIdentical(list))
-				System.out.println("Basic Test 7 passed");
-			else 
-				System.out.println("Basic Test 7 failed");
-		} catch (RemoteException e) {
-			e.printStackTrace();
-		}
-		
-		for(int i=0; i<9; i++){
-			serverList.get(i).close();
-		}
-		
-	}
 
 	private boolean isValidLength(ArrayList<ArrayList<Object>> list, int number) {
 
@@ -580,14 +562,12 @@ public class PaxosTest {
 
 	public static void main(String args[]){
 		PaxosTest test = new PaxosTest();
-
-//		test.BasicTest1();
-//		test.BasicTest2();
-//		test.BasicTest3();
-//		test.BasicTest4();
-//		test.BasicTest5();
-//		test.BasicTest6();
-//		test.BasicTest7();
+		//		test.BasicTest1();
+		//		test.BasicTest2();
+		//		test.BasicTest3();
+		//		test.BasicTest4();
+		//		test.BasicTest5();
+		//		test.BasicTest6();
 		System.exit(0);
 	}
 }

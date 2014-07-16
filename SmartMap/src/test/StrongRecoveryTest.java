@@ -39,11 +39,11 @@ public class StrongRecoveryTest {
 				e1.printStackTrace();
 			}
 
-			server1.getMyNode().putClientMessageQueue("value6");
-			server2.getMyNode().putClientMessageQueue("value7");
-			server3.getMyNode().putClientMessageQueue("value8");
-			server4.getMyNode().putClientMessageQueue("value9");
-			System.out.println("Value 6 -- 9 posted");
+			server1.getMyNode().putClientMessageQueue("value9");
+			server2.getMyNode().putClientMessageQueue("value10");
+			server3.getMyNode().putClientMessageQueue("value11");
+			server4.getMyNode().putClientMessageQueue("value12");
+			System.out.println("Value 9 -- 12 posted");
 
 			try {
 				Thread.sleep(10000);
@@ -52,20 +52,18 @@ public class StrongRecoveryTest {
 				e1.printStackTrace();
 			}
 			
-			ArrayList<Object> result = server3.getMyNode().deliver();
+			ArrayList<Object> result1 = server1.getMyNode().deliver();
+			ArrayList<Object> result2 = server2.getMyNode().deliver();
+			ArrayList<Object> result3 = server3.getMyNode().deliver();
+			ArrayList<Object> result4 = server4.getMyNode().deliver();
+			System.out.println("Get delivered values from node 1:");
+			System.out.println(result1);
+			System.out.println("Get delivered values from node 2:");
+			System.out.println(result2);
 			System.out.println("Get delivered values from node 3:");
-
-			ArrayList<Object> result2 = server4.getMyNode().deliver();
-			System.out.println("Get delivered values from node 3:");
-			for(Object obj : result){
-				String str = (String) obj;
-				System.out.println(str);
-			}
+			System.out.println(result3);
 			System.out.println("Get delivered values from node 4:");
-			for(Object obj : result2){
-				String str = (String) obj;
-				System.out.println(str);
-			}
+			System.out.println(result4);
 
 		} catch (RemoteException e) {
 			e.printStackTrace();

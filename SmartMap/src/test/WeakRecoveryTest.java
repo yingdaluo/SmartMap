@@ -50,21 +50,24 @@ public class WeakRecoveryTest {
 				e1.printStackTrace();
 			}
 			
-			ArrayList<Object> result = server3.getMyNode().deliver();
+			ArrayList<Object> result1 = server1.getMyNode().deliver();
+			ArrayList<Object> result2 = server2.getMyNode().deliver();
+			ArrayList<Object> result3 = server3.getMyNode().deliver();
+			System.out.println("Get delivered values from node 1:");
+			System.out.println(result1);
+			System.out.println("Get delivered values from node 2:");
+			System.out.println(result2);
 			System.out.println("Get delivered values from node 3:");
-
-			for(Object obj : result){
-				String str = (String) obj;
-				System.out.println(str);
-			}
-
+			System.out.println(result3);
+			
 		} catch (RemoteException e) {
 			e.printStackTrace();
 		}
-
+		
 		server1.close();
 		server2.close();
 		server3.close();
+		System.out.println("System crashed again");
 		System.exit(0);
 	}
 }
